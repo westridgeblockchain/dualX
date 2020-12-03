@@ -38,7 +38,8 @@ If both the transfers were successfull, the contract confirms the investment and
 (confirm-agreement (provider principal) (token-x principal) (token-y principal) (token-x-amount uint) (token-y-amount uint) (yield-amount uint) (yield-period uint))
 ```
 ### possible errors:
-
+- transfer-failed-err: Either the investor was unable to transfer the pledged deposit currency amount or the provider was unable to transfer the pledged yield amount in deposit currency.
+- no-option-err: No option exists with the given terms in the system for which a confirmation is received.
 
 ## exercise-option
 Provider can exercise the option he holds at any time until the expiry. At the exercise time, the provider will provide a number P such that 0<=P<=1. The function will check if the provider and investor have a valid contract and that investment period has not yet elapsed. If so the following transfers will be made on the basis of P:
@@ -53,7 +54,9 @@ Provider can exercise the option he holds at any time until the expiry. At the e
 The contract is then updated to remove the exercised option from record.
 
 ### possible errors:
-
+- period-elapsed-err: The investment period has elapsed and option exercise is not allowed
+- transfer-failed-err: Unable to transfer token-y (STX) from provider account to investor as per the ratio determined by P K and initial contract terms on token-y-amount
+- no-investment-err: There is no confirmed contract between the two parties for which an option can be exercised.
 ## get-return
 Any time after the investment period has elapsed, the investor can ask for his initial investment to the returned if the provider has not exercised the option and already triggered the transfers. Full amount of the initial investment in deposit currency is made as per the contract terms. The yield was already with the investor when he deposited the investment and confirmed the contract.
 
@@ -61,7 +64,5 @@ Any time after the investment period has elapsed, the investor can ask for his i
 (get-return (provider principal))
 ```
 ### possible errors:
-- no-investment-err 
-means the provider has exercised the option and sent yield and dual currency amount already there is no further investment returns
-- too-soon-err
-Investment period has not yet elapsed
+- no-investment-err: means the provider has exercised the option and sent yield and dual currency amount already there is no further investment returns
+- too-soon-err: Investment period has not yet elapsed

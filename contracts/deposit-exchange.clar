@@ -95,6 +95,7 @@
                      ((if 
                         (>= expiry-time block-height)
                         (
+                            ;;need to think about dTokens ... need to revoke those
                            (err period-elapsed-err)
                         ) 
                         (
