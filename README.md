@@ -22,8 +22,46 @@ In second phase of the implementation where dTokens will be entered into GamX we
 A list of main functions implementing deposit exchange functionality:
 
 ## add-option
-Provider and investor agree and create an option with terms of contract including currency pair and relative amount of both representing strike K, yield and period in days
+Provider and investor agree and provider creates an option with terms of contract including currency pair and relative amount of both representing strike K, yield and investment period in days
 ```
 (add-option (investor principal) (token-x principal) (token-y principal) (token-x-amount uint) (token-y-amount uint) (yield-amount uint) (yield-period uint))
 ```
 
+## confirm-agreement
+Investor will confirm to the terms of an added option. If the provided terms of option match with those added by the proivder in the system then the dualX does the following two transfers:
+
+1. transfers deposit currency (referred to as token-x e.g., wrapped BTC) - yield from investor. This ensures the investor has an upfront yield on his investment
+2. transfers yield amount in deposit currency from provider
+
+If both the transfers were successfull, the contract confirms the investment and its expiry time is set from the current block height. Additionally, the provider is issued dTokens representing an option that will be worked with in extension work and has worth which can be sold to someone.
+```
+(confirm-agreement (provider principal) (token-x principal) (token-y principal) (token-x-amount uint) (token-y-amount uint) (yield-amount uint) (yield-period uint))
+```
+### possible errors:
+
+
+## exercise-option
+Provider can exercise the option he holds at any time until the expiry. At the exercise time, the provider will provide a number P such that 0<=P<=1. The function will check if the provider and investor have a valid contract and that investment period has not yet elapsed. If so the following transfers will be made on the basis of P:
+
+1. transfer (token-y-amount * P) token-y to investors (part paid in STX)
+2. transfer ((1-P)* token-y-amount * K) token-x to investor (part paid from the original deposit in BTC)
+3. transfer ((P)*token-y-amount*K) token-x to provider (part paid from the original deposit in BTC)
+
+```
+(exercise-option (investor principal) (P uint) (exp int))
+```
+The contract is then updated to remove the exercised option from record.
+
+### possible errors:
+
+## get-return
+Any time after the investment period has elapsed, the investor can ask for his initial investment to the returned if the provider has not exercised the option and already triggered the transfers. Full amount of the initial investment in deposit currency is made as per the contract terms. The yield was already with the investor when he deposited the investment and confirmed the contract.
+
+```
+(get-return (provider principal))
+```
+### possible errors:
+- no-investment-err 
+means the provider has exercised the option and sent yield and dual currency amount already there is no further investment returns
+- too-soon-err
+Investment period has not yet elapsed

@@ -74,7 +74,7 @@
 )
 ;;provider can exercise the option any time prior to the period of maturity
 ;;a ratio of token-x and token-stx for return to investor
-(define-public (exercise-option (investor principal) (P uint))
+(define-public (exercise-option (investor principal) (P uint) (exp int))
     (begin
         (let (
                 ;;confirm that investment is valid
