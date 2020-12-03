@@ -11,7 +11,7 @@
 
 (define-map investment-returns
     ((investor principal) (provider principal))
-    ((token-x principal) (token-x-amount uint)(token-y principal) (token-y-amount uint) (yield uint) (expiry-time uint)) 
+    ((token-x principal) (token-x-amount uint) (token-y principal) (token-y-amount uint) (yield uint) (expiry-time uint)) 
 )
 
 ;;period is specified as number of days
@@ -59,7 +59,6 @@
                     )
                     (begin
                         ;;issue an equal amount of deposit tokens also dTokens
-                        (contract-call? dToken mint-d-tokens provider (tuple (investor tx-sender) (token-x token-x) (token-y token-y) (token-x-amount token-x-amount) (token-y-amount token-y-amount))) 
                         (contract-call? dToken mint-d-tokens provider token-y-amount) 
                         (map-insert investment-returns ((investor tx-sender) (provider provider))
                                                         ((token-x token-x) (token-x-amount token-x-amount) (token-y token-x) (token-y-amount token-x-amount) (yield yield-amount) (expiry-time (+ period-blocks block-height)))
@@ -75,11 +74,11 @@
 )
 ;;provider can exercise the option any time prior to the period of maturity
 ;;a ratio of token-x and token-stx for return to investor
-(define-public (exercise-option (investor principal)(P uint))
+(define-public (exercise-option (investor principal) (P uint))
     (begin
         (let (
                 ;;confirm that investment is valid
-                (investment-return (map-get? investment-returns ((investor investor)(provider tx-sender))))
+                (investment-return (map-get? investment-returns ((investor investor) (provider tx-sender))))
             )
             ((if 
                 (is-some investment-return)
@@ -114,7 +113,7 @@
                                 (contract-call? 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.token-x transfer-from contract-address provider (* P token-y-amount K) )
                                     
                                 ;;also remove the entry from returns for the investor
-                                (map-delete returns ((investor investor)(provider tx-sender)))
+                                (map-delete returns ((investor investor) (provider tx-sender)))
                              ) 
                              (
                                 (err transfer-failed-err)
@@ -134,7 +133,7 @@
 ;;agreement and the lock period has elapsed
 (define-public (get-return (provider principal))
         (let (
-                (investment-return (map-get? investment-returns (investor tx-sender)(provider provider)) )
+                (investment-return (map-get? investment-returns (investor tx-sender) (provider provider)) )
             )
             (if (is-some investment-return)
                 (let (
