@@ -21,7 +21,7 @@
 )    
 
 ;;public funtions
-;;an agreement between the two parties on currency pair DCD and respective amount terms
+;;an agreement between the two parties on currency pair dualX and respective amount terms representing strike K
 (define-public (add-option (investor principal) (token-x principal) (token-y principal) (token-x-amount uint) (token-y-amount uint) (yield-amount uint) (yield-period uint))
     (begin 
         (map-insert options ((investor investor) (provider tx-sender) (token-x token-x) (token-y token-y))
