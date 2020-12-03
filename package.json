@@ -1,0 +1,34 @@
+{
+  "name": "dualx",
+  "version": "0.0.1",
+  "author": {
+    "name": "Westridge Markets",
+    "email": "blockchain@westridgemarkets.com"
+  },
+  "repository": "",
+  "private": true,
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "test": "mocha",
+    "dualx": "mocha 'test/integration/deposit-exchange-integration.ts'",
+    "test:watch": "mocha --watch"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^10",
+    "chai": "^4.2.0",
+    "chai-string": "^1.5.0",
+    "mocha": "^6.2.3",
+    "ts-node": "^8.2.0",
+    "typescript": "^3.5.2"
+  },
+  "dependencies": {
+    "@blockstack/clarity": "^0.3.0",
+    "@blockstack/clarity-native-bin": "^0.3.0",
+    "@blockstack/stacks-transactions": "^0.4.4",
+    "bn.js": "^5.1.2"
+  }
+}
