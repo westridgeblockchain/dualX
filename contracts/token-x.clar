@@ -44,3 +44,9 @@
       )
   )
 )
+
+;; Initialize the contract
+(begin
+  (mint! 'ST2FWP4ZSFJ0GPD5ADR32M1AXC7ASE1GXB2R0NDTJ u2000000)  ;; investor integration tests with testnet
+  (mint! 'ST1F6TC9D7TQ0EV6VJ1WNJ53R26Q2ASRGWYVSSX23 u1000000)  ;; provider integration tests with testnet
+)

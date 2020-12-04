@@ -19,6 +19,7 @@ import {
   TraitTXClient,
 } from '../../src/tx-clients/trait-tx-client'
 import { TokenTXClient } from "../../src/tx-clients/token-tx-client";
+import { DepositExTXClient } from "../../src/tx-clients/deposit-exchange-client";
 const chai = require('chai')
 chai.use(require('chai-string'))
 const assert = chai.assert
@@ -31,11 +32,13 @@ describe("dualX integration scenarios", async () => {
     network.coreApiUrl = STACKS_API_URL
     const stacksClient = new StacksClient(network); 
     const traitTXClient = new TraitTXClient(key_contract, network);
-    const tokenXClient = new TokenTXClient("token-x","token-x",key_contract,network)
+    const tokenXClient = new TokenTXClient("token-x","token-x",key_contract,network);
+    const depExClient = new DepositExTXClient(key_contract,network);
     before(async () => {
       try {
-      //  await traitTXClient.deployContract();
-        await tokenXClient.deployContract();
+       //await traitTXClient.deployContract();
+        //await tokenXClient.deployContract();
+        await depExClient.deployContract();
         console.log("Trait deployed");
       } catch(e) {
         console.log("Seme exception",e.message);
@@ -45,8 +48,10 @@ describe("dualX integration scenarios", async () => {
       }
       
     })
-    it("scenario #2", async () => {
+    it("scenario #1: Investor confirming an offer ", async () => {
+      //initial balance of X(BTC) deposit currency token
       const balance_investor_tokenx = await tokenXClient.balanceOf(key_investor, { keys_sender: key_investor })
-      assert.equal(balance_investor_tokenx.toString(), '0')
+      assert.equal(balance_investor_tokenx.toString(), '2000000')
+      
     })
   })
