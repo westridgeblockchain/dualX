@@ -1,4 +1,4 @@
-;; possible errors
+;; possible error codes
 (define-constant too-soon-err u10)
 (define-constant period-elapsed-err u11)
 (define-constant no-option-err u12)

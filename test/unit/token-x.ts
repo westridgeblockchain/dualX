@@ -1,6 +1,6 @@
 import { Client, Provider, ProviderRegistry, Result } from "@blockstack/clarity";
 import { assert } from "chai";
-describe("my-token contract test suite", () => {
+describe("token-x contract test suite", () => {
   let tokenX: Client;
   let provider: Provider;
   before(async () => {
@@ -35,7 +35,7 @@ describe("my-token contract test suite", () => {
     });
     it("name should be", async () => {
       const name = await getName();
-      assert.equal(name, 'token-x');
+      assert.equal(name, 'stx-wrapr');
     })
   });
   after(async () => {

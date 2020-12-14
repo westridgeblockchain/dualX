@@ -11,7 +11,8 @@
     "node": ">=10"
   },
   "scripts": {
-    "test": "mocha",
+    "test-stx": "mocha 'test/unit/token-stx.ts'",
+    "test": "mocha 'test/unit/*'",
     "dualx": "mocha 'test/integration/deposit-exchange-integration.ts'",
     "test:watch": "mocha --watch"
   },

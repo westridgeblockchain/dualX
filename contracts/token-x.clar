@@ -1,6 +1,6 @@
 ;;commenting out as giving parse errors
-;;(impl-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token.src20-token)
-;;any src20 compatible currency tokens wrapped BTC
+(impl-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token.src20-token)
+;;any src20 compatible currency tokens such as wrapped BTC
 
 (define-fungible-token fungible-token)
 

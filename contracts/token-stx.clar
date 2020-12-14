@@ -1,4 +1,4 @@
-;;(impl-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-trait.src20-token)
+(impl-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token.src20-token)
 ;;wrapr 
 
 (define-data-var total-supply uint u0)
