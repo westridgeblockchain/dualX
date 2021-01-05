@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
+    "target": "es2019",
     "module": "commonjs",
-    "target": "es2017",
-    "lib": ["es2017"],
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "declaration": false,
     "strict": true,
-    "strictNullChecks": true,
-    "sourceMap": true,
-    "noEmit": true
+    "outDir": "lib",
+    "sourceMap": false,
+    "esModuleInterop": false,
+    "baseUrl": ".",
+    "noImplicitAny": false,
+    "checkJs": false
   },
   "include": [
     "test"

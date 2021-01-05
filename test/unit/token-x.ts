@@ -1,44 +1,60 @@
-import { Client, Provider, ProviderRegistry, Result } from "@blockstack/clarity";
-import { assert } from "chai";
+import { Client, Provider, ProviderRegistry } from "@blockstack/clarity";
+
+const chai = require('chai')
+chai.use(require('chai-string'))
+const assert = chai.assert
+import {TokenTXClient} from "../../src/tx-clients/token-tx-client"
+
 describe("token-x contract test suite", () => {
-  let tokenX: Client;
+  let tokenX: TokenTXClient;
+  let src20TraitClient: Client;
   let provider: Provider;
+
+  const addresses = [
+    "ST2FWP4ZSFJ0GPD5ADR32M1AXC7ASE1GXB2R0NDTJ",  // investor
+    "ST1F6TC9D7TQ0EV6VJ1WNJ53R26Q2ASRGWYVSSX23",  // provider
+    "ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7",  // dualX contracts
+  ]
+  const investor = addresses[0];
+  const dProvider = addresses[1];
+  const contractAddress = addresses[2];
+
   before(async () => {
     provider = await ProviderRegistry.createProvider();
-    tokenX = new Client("ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.token-x", "token-x", provider);
+    src20TraitClient = new Client("ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token", "src20-token", provider);
+    tokenX = new TokenTXClient(contractAddress, provider);
   });
-  it("should have a valid syntax", async () => {
-    await tokenX.checkContract();
-  });
-  describe("deploying an instance of the contract", () => {
-    const getName = async () => {
-      const query = tokenX.createQuery({
-        method: { name: "get-name", args: [] }
-      });
-      const receipt = await tokenX.submitQuery(query);
-      const result = Result.unwrapString(receipt);
-      return result;
-    }
-    // const execMethod = async (method: string) => {
-    //   const tx = tokenX.createTransaction({
-    //     method: {
-    //       name: method,
-    //       args: [],
-    //     },
-    //   });
-    //   await tx.sign("ST13W5E9JKRMFRM2KMP6ZTGR1KQPJK34K8HVX4YVR");
-    //   const receipt = await tokenX.submitTransaction(tx);
-    //   return receipt;
-    // }
-    before(async () => {
-      await tokenX.deployContract();
+  describe("Check contracts", () => {
+    it("should have valid syntax", async () => {
+      //src20 trait
+      await src20TraitClient.checkContract()
+      await src20TraitClient.deployContract()
+      
+      //token-x
+      await tokenX.checkContract()
+      await tokenX.deployContract()
+      
     });
+  })
+
+  describe("Test Scenarios", () => {
     it("name should be", async () => {
-      const name = await getName();
-      assert.equal(name, 'stx-wrapr');
+      assert.equal((await tokenX.getName()).toString(), '(ok "wrapped-btc")');
+    })
+
+    it("initial balance",async()=>{
+      assert.equal(await tokenX.balanceOf(dProvider), 1000000)
+      assert.equal(await tokenX.balanceOf(investor), 2000000)
+    })
+
+    it("transfer x tokens",async()=>{
+      await tokenX.transfer(dProvider,500000,{sender:investor})
+      assert.equal(await tokenX.balanceOf(investor),1500000)
+      assert.equal(await tokenX.balanceOf(dProvider),1500000)
     })
   });
-  after(async () => {
+ 
+   after(async () => {
     await provider.close();
   });
 });

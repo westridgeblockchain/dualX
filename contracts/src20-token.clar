@@ -9,13 +9,11 @@
     (transfer-from (principal principal uint) (response bool uint))
 
     ;; the human readable name of the token
-    (get-name () (response (buff 32) uint))
+    (get-name () (response (string-ascii 32) uint))
 
     ;; the balance of the passed principal
     (get-balance-of (principal) (response uint uint))
 
-    ;; the current total supply (which does not need to be a constant)
-    (get-total-supply () (response uint uint))
   )
 )
 

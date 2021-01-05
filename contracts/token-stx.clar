@@ -1,3 +1,4 @@
+(use-trait src20-token-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token.src20-token)
 (impl-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token.src20-token)
 ;;wrapr 
 
@@ -11,13 +12,13 @@
 )
 
 ;; get the token balance of owner
-(define-read-only (balance-of (owner principal))
+(define-read-only (get-balance-of (owner principal))
   (begin
     (ok (ft-get-balance wrapped-token owner))
   )
 )
 
-(define-read-only (name)
+(define-read-only (get-name)
   (ok "stx-wrapr")
 )
 ;; Transfers tokens to a specified principal (<trait>)

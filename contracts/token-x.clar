@@ -1,4 +1,4 @@
-;;commenting out as giving parse errors
+(use-trait src20-token-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token.src20-token)
 (impl-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token.src20-token)
 ;;any src20 compatible currency tokens such as wrapped BTC
 
@@ -9,21 +9,7 @@
 
 ;; token name (<trait>)
 (define-read-only (get-name)
-  (ok "{{token-x}}")
-)
-
-;; Total number of tokens in existence (<trait>)
-(define-private (get-total-supply)
-  (var-get total-supply))
-
-;; Transfers tokens to a specified principal (<trait>)
-(define-public (transfer (recipient principal) (amount uint))
-  (ft-transfer? fungible-token amount tx-sender recipient)
-)
-
-;;transfer tokens from a sender to a recepient (<trait>)
-(define-public (transfer-from (sender principal) (recipient principal) (amount uint))
-  (ft-transfer? fungible-token amount sender recipient)
+  (ok "wrapped-btc")
 )
 
 ;; get token balance of a recepient (<trait>)
@@ -33,20 +19,46 @@
   )
 )
 
+;; Transfers tokens to a specified principal (<trait>)
+(define-public (transfer (recipient principal) (amount uint))
+  (begin  
+    (print "x.transfer")
+    (print amount)
+    (print tx-sender)
+    (print recipient)
+    (ft-transfer? fungible-token amount tx-sender recipient)
+  )
+)
+
+;;transfer tokens from a sender to a recepient (<trait>)
+(define-public (transfer-from (sender principal) (recipient principal) (amount uint))
+(begin
+  (print "x.transfer-from")
+  (print amount)
+  (print sender)
+  (print recipient)
+  (ft-transfer? fungible-token amount sender recipient)
+  )
+)
+
+
+
 ;; Mint new tokens 
 (define-private (mint! (account principal) (amount uint))
-  (if (<= amount u0)
-      (err false)
-      (begin
-        (var-set total-supply (+ (var-get total-supply) amount))
-        (ft-mint? fungible-token amount account)
-        (ok amount)
-      )
+  (if (< amount u0)
+      (err u0)
+      (if 
+            (and 
+                (is-eq (var-set total-supply (+ (var-get total-supply) amount)) true)
+                (is-ok (ft-mint? fungible-token amount account))
+            )
+            (ok amount)
+            (err u0)
+      ) 
   )
 )
 
 ;; Initialize the contract
-(begin
-  (mint! 'ST2FWP4ZSFJ0GPD5ADR32M1AXC7ASE1GXB2R0NDTJ u2000000)  ;; investor integration tests with testnet
-  (mint! 'ST1F6TC9D7TQ0EV6VJ1WNJ53R26Q2ASRGWYVSSX23 u1000000)  ;; provider integration tests with testnet
-)
+
+(mint! 'ST2FWP4ZSFJ0GPD5ADR32M1AXC7ASE1GXB2R0NDTJ u20)  ;; investor 
+(mint! 'ST1F6TC9D7TQ0EV6VJ1WNJ53R26Q2ASRGWYVSSX23 u2)  ;; provider 

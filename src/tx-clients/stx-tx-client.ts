@@ -1,18 +1,17 @@
-
 import { Client, Provider, Result } from '@blockstack/clarity'
 import {NotOKErr} from "../errors";
-import {parse} from "../utils";
+import {parse,unwrapXYList} from "../utils";
 
-export class TokenTXClient extends Client{
+export class STXTXClient extends Client {
   
   constructor(principal: string, provider: Provider) {
     super(
-      `${principal}.token-x`,
-      'token-x',
+      `${principal}.token-stx`,
+      'token-stx',
       provider
     )
   }
-
+  
   async transfer(recipient: string, amount: number, params: { sender: any }) {
     const tx = this.createTransaction({
       method: { name: "transfer", 
@@ -56,6 +55,28 @@ export class TokenTXClient extends Client{
     })
     const receipt = await this.submitQuery(query)
     return Result.unwrapUInt(receipt)
+  }
+
+  //wrap stx
+  async wrapStx(amount:number,params: { sender: string }) {
+    const tx = this.createTransaction({
+      method: { name: "wrap", 
+      args: [`u${amount}`] }
+    })
+    await tx.sign(params.sender)
+    const receipt = await this.submitTransaction(tx)
+    if (receipt.success) {
+      //console.log(receipt.debugOutput)
+      const result = Result.unwrap(receipt)
+      if (result.startsWith('Transaction executed and committed. Returned: ')) {
+        const start_of_list = result.substring('Transaction executed and committed. Returned: '.length)  // keep a word so unwrapXYList will behave like it was with 'ok'
+        const parsed = parse(start_of_list.substring(0, start_of_list.indexOf(')') + 1))
+      //  console.log("parsed -",parsed)
+        return unwrapXYList(parsed)
+      }
+    }
+    console.log("wrap failure", receipt)
+    throw NotOKErr;
   }
 
 }

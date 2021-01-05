@@ -1,60 +1,75 @@
-const BigNum = require('bn.js')
-import { readFileSync } from 'fs'
-import {
-  makeSmartContractDeploy,
-  makeContractCall,
-  ClarityValue,
+import { Client, Provider, Result } from '@blockstack/clarity'
+import { TupleCV } from '@stacks/transactions';
+import {NotOKErr} from "../errors";
+import {parse,unwrapXYList} from "../utils";
 
-  serializeCV,
-  deserializeCV,
-  standardPrincipalCV,
-  uintCV,
-  UIntCV,
-  broadcastTransaction,
-
-  PostConditionMode,
-} from '@blockstack/stacks-transactions'
-
-import {
-    cvToString,
-  waitForTX,
-} from '../tx-utils'
-
-
-export class DepositExTXClient {
-  keys: any
-  network: any
-  contract_name: string
-
-  constructor( keys: any, network: any) {
-    this.keys = keys;
-    this.network = network;
-    this.contract_name = "dualX";
+export class DualXTXClient extends Client {
+  constructor(principal: string, provider: Provider) {
+    super(
+      `${principal}.deposit-exchange`,
+      'deposit-exchange',
+      provider
+    )
   }
 
-  async deployContract() {
-    const fee = new BigNum(8063)
-    const contract_token = readFileSync('./contracts/deposit-exchange.clar').toString()
-
-    console.log(`deploying ${this.contract_name} contract`)
-    const transaction_deploy_trait = await makeSmartContractDeploy({
-      contractName: this.contract_name,
-      codeBody: contract_token,
-      senderKey: this.keys.secretKey,
-      network: this.network,
-      fee,
-      // nonce: new BigNum(0),
+  async invest(dProvider: string, tokenx: string, tokeny: string, amountx: number, amounty: number, yieldAmount: number, yieldPeriod: number, params: { sender: any }) {
+    const tx = this.createTransaction({
+      method: { name: "invest", 
+      args: [`'${dProvider}`,`'${tokenx}`,`'${tokeny}`,`u${amountx}`,`u${amounty}`,`u${yieldAmount}`,`u${yieldPeriod}`] }
     })
-    const tx_id = await broadcastTransaction(transaction_deploy_trait, this.network)
-    const tx = await waitForTX(this.network.coreApiUrl, tx_id, 10000)
-
-    const result = deserializeCV(Buffer.from(tx.tx_result.hex.substr(2), "hex"))
-    return result
+    await tx.sign(params.sender)
+    const receipt = await this.submitTransaction(tx)
+    if (receipt.success) {
+      //console.log(receipt.debugOutput)
+      const result = Result.unwrap(receipt)
+      if (result.startsWith('Transaction executed and committed. Returned: ')) {
+        const start_of_list = result.substring('Transaction executed and committed. Returned: '.length)  // keep a word so unwrapXYList will behave like it was with 'ok'
+        const parsed = parse(start_of_list.substring(0, start_of_list.indexOf(')') + 1))
+        //console.log("parsed -",parsed)
+        return parsed
+      }
+    }
+    console.log("wrap failure", receipt)
+    throw NotOKErr;
   }
-
-  async addOption(keys_owner: any, params: { keys_sender: any }){
-
+  async exerciseOption(investor: string, tokenx: string, tokeny: string, P: number, params: { sender: any }) {
+    const tx = this.createTransaction({
+      method: { name: "exercise-option", 
+      args: [`'${investor}`,`'${tokenx}`, `'${tokeny}`, `u${P}`] }
+    })
+    await tx.sign(params.sender)
+    const receipt = await this.submitTransaction(tx)
+    if (receipt.success) {
+      //console.log(receipt.debugOutput)
+      const result = Result.unwrap(receipt)
+      if (result.startsWith('Transaction executed and committed. Returned: ')) {
+        const start_of_list = result.substring('Transaction executed and committed. Returned: '.length)  // keep a word so unwrapXYList will behave like it was with 'ok'
+        const parsed = parse(start_of_list.substring(0, start_of_list.indexOf(')') + 1))
+        //console.log("parsed -",parsed)
+        return parsed
+      }
+    }
+    console.log("wrap failure", receipt)
+    throw NotOKErr;
   }
-  
-
+  async getReturn(investor: string, tokenx: string, params: { sender: any }) {
+    const tx = this.createTransaction({
+      method: { name: "get-return", 
+      args: [`'${investor}`,`'${tokenx}`] }
+    })
+    await tx.sign(params.sender)
+    const receipt = await this.submitTransaction(tx)
+    if (receipt.success) {
+      //console.log(receipt.debugOutput)
+      const result = Result.unwrap(receipt)
+      if (result.startsWith('Transaction executed and committed. Returned: ')) {
+        const start_of_list = result.substring('Transaction executed and committed. Returned: '.length)  // keep a word so unwrapXYList will behave like it was with 'ok'
+        const parsed = parse(start_of_list.substring(0, start_of_list.indexOf(')') + 1))
+        //console.log("parsed -",parsed)
+        return parsed
+      }
+    }
+    console.log("wrap failure", receipt)
+    throw NotOKErr;
+  }
 }

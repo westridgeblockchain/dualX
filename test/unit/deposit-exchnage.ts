@@ -1,53 +1,101 @@
-import { Client, Provider, ProviderRegistry, Result } from "@blockstack/clarity";
-import { assert } from "chai";
-describe("deposit exchange unit test suite", () => {
-  let dcdClient: Client;
-  let tokenTraitClient: Client;
+import { Client, Provider, ProviderRegistry } from "@blockstack/clarity";
+
+const chai = require('chai')
+chai.use(require('chai-string'))
+const assert = chai.assert
+import {STXTXClient} from "../../src/tx-clients/stx-tx-client";
+import {TokenTXClient} from "../../src/tx-clients/token-tx-client"
+import {DualXTXClient} from "../../src/tx-clients/deposit-exchange-client"
+
+import { providerWithInitialAllocations } from "./providerWithInitialAllocations";
+
+import * as balances from '../../balances.json';
+
+
+console.log(balances);
+
+
+describe("deposit exchange test suite", () => {
+  let tokenX: TokenTXClient;
+  let tokenSTX: STXTXClient;
+  let src20TraitClient: Client
+  let dualX: DualXTXClient;
   let provider: Provider;
+
+  const addresses = [
+    "ST2FWP4ZSFJ0GPD5ADR32M1AXC7ASE1GXB2R0NDTJ",  // investor
+    "ST1F6TC9D7TQ0EV6VJ1WNJ53R26Q2ASRGWYVSSX23",  // provider
+    "ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7",  // dualX contracts
+  ]
+  const investor = addresses[0];
+  const dProvider = addresses[1];
+  const contractAddress = addresses[2];
+  const stxToken = `ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.token-stx`;
+  const xToken = `ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.token-x`;
+  
+
   before(async () => {
+    ProviderRegistry.registerProvider(
+      providerWithInitialAllocations(balances)
+    )
     provider = await ProviderRegistry.createProvider();
-    tokenTraitClient = new Client("ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-trait", "src20-trait", provider);
-    dcdClient = new Client("ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.deposit-exchange", "deposit-exchange", provider);
+    src20TraitClient = new Client(contractAddress+".src20-token", "src20-token", provider);
+    tokenSTX = new STXTXClient(contractAddress, provider);
+    tokenX = new TokenTXClient(contractAddress, provider);
+    dualX = new DualXTXClient(contractAddress, provider);
+
   });
-  it("should have a valid syntax", async () => {
-    await tokenTraitClient.checkContract();
-    await tokenTraitClient.deployContract();
-    await dcdClient.checkContract();
-  });
-  describe("deploying an instance of the contract", () => {
-    
-    const execMethod = async (method: string) => {
-      const tx = dcdClient.createTransaction({
-        method: {
-          name: method,
-          args: [],
-        },
-      });
-      await tx.sign("ST13W5E9JKRMFRM2KMP6ZTGR1KQPJK34K8HVX4YVR");
-      const receipt = await dcdClient.submitTransaction(tx);
-      return receipt;
-    }
-    before(async () => {
+  describe("DualX contracts", () => {
+    it("should have a valid syntax", async () => {
+      //src20 trait
+      await src20TraitClient.checkContract()
+      await src20TraitClient.deployContract()
       
-      await dcdClient.deployContract();
+      //token-x
+      await tokenX.checkContract()
+      await tokenX.deployContract()
+
+      //stx wrapper contract
+      await tokenSTX.checkContract()
+      await tokenSTX.deployContract()
+
+      //deposit exchange contract
+      await dualX.checkContract()
+      await dualX.deployContract()
+
     });
-    // it("should start at zero", async () => {
-    //   const counter = await getCounter();
-    //   assert.equal(counter, 0);
-    // })
-    // it("should increment", async () => {
-    //   await execMethod("increment");
-    //   assert.equal(await getCounter(), 1);
-    //   await execMethod("increment");
-    //   assert.equal(await getCounter(), 2);
-    // })
-    // it("should decrement", async () => {
-    //   await execMethod("decrement");
-    //   assert.equal(await getCounter(), 1);
-    //   await execMethod("decrement");
-    //   assert.equal(await getCounter(), 0);
-    // })
   });
+
+  describe("Test Scenarios", () => {
+    it("initial balance",async()=>{
+      await tokenSTX.wrapStx(150000,{sender:dProvider})
+      assert.equal(await tokenSTX.balanceOf(dProvider),150000)
+      assert.equal(await tokenSTX.balanceOf(investor),0)
+      assert.equal(await tokenX.balanceOf(dProvider), 2)
+      assert.equal(await tokenX.balanceOf(investor), 20)
+    })
+
+    it("invest in dualX", async () => {
+     await dualX.invest(dProvider,xToken, stxToken,2,100000,1,1,{sender:investor})
+     assert.equal(await tokenX.balanceOf(dProvider), 1)
+     assert.equal(await tokenX.balanceOf(investor), 19)
+    })
+
+    // it("exercise option by the provider", async() => {
+    //   await dualX.exerciseOption(investor,xToken,stxToken, 1,{sender:dProvider})
+    //   assert.equal(await tokenX.balanceOf(investor),19)
+    //   assert.equal(await tokenX.balanceOf(dProvider),3)
+    //   assert.equal(await tokenSTX.balanceOf(investor),100000)
+    // })
+
+    it("get return by the investor", async() => {
+      await dualX.getReturn(dProvider,xToken,{sender:investor})
+      assert.equal(await tokenX.balanceOf(investor),21)
+      assert.equal(await tokenX.balanceOf(dProvider),1)
+      assert.equal(await tokenSTX.balanceOf(investor),0)
+    })
+  });
+
   after(async () => {
     await provider.close();
   });
