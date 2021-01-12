@@ -21,6 +21,11 @@
 (define-read-only (get-name)
   (ok "stx-wrapr")
 )
+;; the number of decimals used
+(define-read-only (decimals)
+  (ok u0)
+)
+
 ;; Transfers tokens to a specified principal (<trait>)
 (define-public (transfer (recipient principal) (amount uint))
   (begin

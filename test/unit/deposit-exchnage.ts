@@ -6,7 +6,7 @@ const assert = chai.assert
 import {STXTXClient} from "../../src/tx-clients/stx-tx-client";
 import {TokenTXClient} from "../../src/tx-clients/token-tx-client"
 import {DualXTXClient} from "../../src/tx-clients/deposit-exchange-client"
-
+import {dTokenClient} from "../../src/tx-clients/dToken-client"
 import { providerWithInitialAllocations } from "./providerWithInitialAllocations";
 
 import * as balances from '../../balances.json';
@@ -16,9 +16,11 @@ console.log(balances);
 
 
 describe("deposit exchange test suite", () => {
+  let tokenD: dTokenClient;
   let tokenX: TokenTXClient;
   let tokenSTX: STXTXClient;
-  let src20TraitClient: Client
+  let src20TraitClient: Client;
+  let dTokenTraitClient: Client;
   let dualX: DualXTXClient;
   let provider: Provider;
 
@@ -32,6 +34,7 @@ describe("deposit exchange test suite", () => {
   const contractAddress = addresses[2];
   const stxToken = `ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.token-stx`;
   const xToken = `ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.token-x`;
+  const dToken = `ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.dToken`;
   
 
   before(async () => {
@@ -40,10 +43,11 @@ describe("deposit exchange test suite", () => {
     )
     provider = await ProviderRegistry.createProvider();
     src20TraitClient = new Client(contractAddress+".src20-token", "src20-token", provider);
+    dTokenTraitClient = new Client(contractAddress+".dToken-trait", "dToken-trait", provider);
     tokenSTX = new STXTXClient(contractAddress, provider);
     tokenX = new TokenTXClient(contractAddress, provider);
     dualX = new DualXTXClient(contractAddress, provider);
-
+    tokenD = new dTokenClient(contractAddress,provider);
   });
   describe("DualX contracts", () => {
     it("should have a valid syntax", async () => {
@@ -51,6 +55,10 @@ describe("deposit exchange test suite", () => {
       await src20TraitClient.checkContract()
       await src20TraitClient.deployContract()
       
+      //dToken Trait
+      await dTokenTraitClient.checkContract()
+      await dTokenTraitClient.deployContract()
+
       //token-x
       await tokenX.checkContract()
       await tokenX.deployContract()
@@ -58,6 +66,10 @@ describe("deposit exchange test suite", () => {
       //stx wrapper contract
       await tokenSTX.checkContract()
       await tokenSTX.deployContract()
+
+      //dToken contraact
+      await tokenD.checkContract()
+      await tokenD.deployContract()
 
       //deposit exchange contract
       await dualX.checkContract()
@@ -71,14 +83,20 @@ describe("deposit exchange test suite", () => {
       await tokenSTX.wrapStx(150000,{sender:dProvider})
       assert.equal(await tokenSTX.balanceOf(dProvider),150000)
       assert.equal(await tokenSTX.balanceOf(investor),0)
-      assert.equal(await tokenX.balanceOf(dProvider), 2)
-      assert.equal(await tokenX.balanceOf(investor), 20)
+      assert.equal(await tokenX.balanceOf(dProvider), 200000000)
+      assert.equal(await tokenX.balanceOf(investor), 2000000000)
     })
 
     it("invest in dualX", async () => {
-     await dualX.invest(dProvider,xToken, stxToken,2,100000,1,1,{sender:investor})
-     assert.equal(await tokenX.balanceOf(dProvider), 1)
-     assert.equal(await tokenX.balanceOf(investor), 19)
+     await dualX.invest(dProvider,xToken, stxToken,200000000,100000000,1,true,{sender:investor})
+     assert.equal(await tokenX.balanceOf(dProvider), 100000000)
+     assert.equal(await tokenX.balanceOf(investor), 1900000000)
+    })
+
+    it("begin the investment cycle", async()=>{
+      await dualX.beginCycle(investor, dProvider,true, 1420,dToken,{sender:contractAddress})
+      assert.equal(await tokenD.balanceOf(dProvider),140845)
+      assert.equal(await tokenD.getProfile(dProvider),'(ok "STX/BTC")')
     })
 
     // it("exercise option by the provider", async() => {
@@ -88,12 +106,12 @@ describe("deposit exchange test suite", () => {
     //   assert.equal(await tokenSTX.balanceOf(investor),100000)
     // })
 
-    it("get return by the investor", async() => {
-      await dualX.getReturn(dProvider,xToken,{sender:investor})
-      assert.equal(await tokenX.balanceOf(investor),21)
-      assert.equal(await tokenX.balanceOf(dProvider),1)
-      assert.equal(await tokenSTX.balanceOf(investor),0)
-    })
+    // it("get return by the investor", async() => {
+    //   await dualX.getReturn(dProvider,xToken,{sender:investor})
+    //   assert.equal(await tokenX.balanceOf(investor),21)
+    //   assert.equal(await tokenX.balanceOf(dProvider),1)
+    //   assert.equal(await tokenSTX.balanceOf(investor),0)
+    // })
   });
 
   after(async () => {

@@ -43,14 +43,14 @@ describe("token-x contract test suite", () => {
     })
 
     it("initial balance",async()=>{
-      assert.equal(await tokenX.balanceOf(dProvider), 1000000)
-      assert.equal(await tokenX.balanceOf(investor), 2000000)
+      assert.equal(await tokenX.balanceOf(dProvider), 200000000)
+      assert.equal(await tokenX.balanceOf(investor), 2000000000)
     })
 
     it("transfer x tokens",async()=>{
-      await tokenX.transfer(dProvider,500000,{sender:investor})
-      assert.equal(await tokenX.balanceOf(investor),1500000)
-      assert.equal(await tokenX.balanceOf(dProvider),1500000)
+      await tokenX.transfer(dProvider,10000000,{sender:investor})//this represents 0.1
+      assert.equal(await tokenX.balanceOf(investor),1990000000)
+      assert.equal(await tokenX.balanceOf(dProvider),210000000)
     })
   });
  

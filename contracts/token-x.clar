@@ -12,6 +12,10 @@
   (ok "wrapped-btc")
 )
 
+;; the number of decimals used
+(define-read-only (decimals)
+  (ok u8)
+)
 ;; get token balance of a recepient (<trait>)
 (define-read-only (get-balance-of (owner principal))
   (begin
@@ -60,5 +64,5 @@
 
 ;; Initialize the contract
 
-(mint! 'ST2FWP4ZSFJ0GPD5ADR32M1AXC7ASE1GXB2R0NDTJ u20)  ;; investor 
-(mint! 'ST1F6TC9D7TQ0EV6VJ1WNJ53R26Q2ASRGWYVSSX23 u2)  ;; provider 
+(mint! 'ST2FWP4ZSFJ0GPD5ADR32M1AXC7ASE1GXB2R0NDTJ u2000000000)  ;; investor 
+(mint! 'ST1F6TC9D7TQ0EV6VJ1WNJ53R26Q2ASRGWYVSSX23 u200000000)  ;; provider 

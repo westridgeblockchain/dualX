@@ -1,30 +1,21 @@
+(use-trait dToken-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.dToken-trait.dToken-trait)
+(impl-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.dToken-trait.dToken-trait)
+
+
 (define-fungible-token deposit-token)
 
 ;; Storagae
-(define-data-var total-supply uint u0)
-(define-map avilable-option ((holder principal)) 
-                     ((investor principal) (token-x principal) (token-y principal) (token-x-amount uint) (token-y-amount uint))
+(define-map owners {holder: principal}
+                    {profile: (string-ascii 65), strike: uint}
 )
-
 
 ;; token name (<trait>)
 (define-read-only (get-name)
-  (ok "token-d")
+  (ok "deposit-token")
 )
-
-
-;; Total number of tokens in existence (<trait>)
-(define-private (get-total-supply)
-  (var-get total-supply))
-
-
-
-;; Transfers tokens to a specified principal (<trait>)
-(define-public (transfer (recipient principal) (amount uint))
-  (ft-transfer? deposit-token amount tx-sender recipient)
-)
-(define-public (transfer-from (sender principal) (recipient principal) (amount uint))
-  (ft-transfer? deposit-token amount sender recipient)
+;; the number of decimals used
+(define-read-only (decimals)
+  (ok u0)
 )
 
 ;; get token balance of a recepient (<trait>)
@@ -34,16 +25,42 @@
   )
 )
 
+;; Transfers tokens to a specified principal (<trait>)
+(define-public (transfer (recipient principal) (amount uint))
+  (begin  
+    (print "dToken.transfer")
+    (print amount)
+    (print tx-sender)
+    (print recipient)
+    (ft-transfer? deposit-token amount tx-sender recipient)
+  )
+)
+
+;;transfer tokens from a sender to a recepient (<trait>)
+(define-public (transfer-from (sender principal) (recipient principal) (amount uint))
+(begin
+  (print "dToken.transfer-from")
+  (print amount)
+  (print sender)
+  (print recipient)
+  (ft-transfer? deposit-token amount sender recipient)
+  )
+)
+
 
 ;; Mint deposit tokens
-(define-public (mint-d-tokens (account principal) (amount uint))
-  (if (<= amount u0)
-      (err false)
+(define-public (issue-d-tokens (account principal) (amount uint) (xToken (string-ascii 32)) (yToken (string-ascii 32)) (strike uint))
+  (if (and
+        (> amount u0)
+        (is-ok (ft-mint? deposit-token amount account))
+      )
       (begin
-        (var-set total-supply (+ (var-get total-supply) amount))
-        (ft-mint? deposit-token amount account)
+        (map-insert owners {holder: account}
+                          {profile: (concat (concat xToken "/") yToken), strike: strike}
+        )
         (ok amount)
       )
+      (err u0)
   )
 )
 
@@ -55,11 +72,19 @@
     (if
       (is-ok (ft-transfer? deposit-token amount  account contract-address))
       (begin
-        (var-set total-supply (- (var-get total-supply) amount))
+        (map-delete owners {holder: account})
         (ok true)
       )
       (err false)
     )
+  )
+)
+
+(define-public (get-profile (account principal))
+  (let (
+          (owner (unwrap! (map-get? owners {holder: account}) (err false)))
+        )
+        (ok (get profile owner))
   )
 )
 

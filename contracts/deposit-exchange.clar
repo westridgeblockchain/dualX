@@ -1,4 +1,5 @@
 (use-trait src20-token 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.src20-token.src20-token)
+(use-trait dToken-trait 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.dToken-trait.dToken-trait)
 
 ;; possible error codes
 (define-constant too-soon-err u10)
@@ -7,6 +8,8 @@
 (define-constant no-investment-err u13)
 (define-constant transfer-failed-err u14)
 
+;;contract owner for admin functions
+
 ;;private data
 ;; time is in terms of block height for now
 ;;expiry-time is the time when this option will expire
@@ -14,6 +17,11 @@
 (define-map options
     {investor: principal, provider: principal}
     {token-x: principal, token-x-amount: uint, token-y: principal, token-y-amount: uint, yield: uint, expiry-time: uint}
+)
+
+(define-map locked-deals
+    {investor: principal, provider: principal, isHedger: bool}
+    {token-x: principal, token-x-amount: uint, token-y: principal, yield: uint, expiry-time: uint}
 )
 
 ;;period is specified as number of days
@@ -34,7 +42,7 @@
 ;;)
 
 ;;Investor will confirm an agreement and create the option for provider
-(define-public (invest (provider principal) (token-x <src20-token>) (token-y <src20-token>) (token-x-amount uint) (token-y-amount uint) (yield-amount uint) (yield-period uint))
+(define-public (invest (provider principal) (token-x <src20-token>) (token-y <src20-token>) (token-x-amount uint) (yield-amount uint) (yield-period uint) (is-hedger bool))
     (begin
     (let (
         (contract-address (as-contract tx-sender))
@@ -50,14 +58,44 @@
                 (is-ok (print (as-contract (contract-call? token-x  transfer-from provider contract-address yield-amount))))
             )
             (begin 
-                (map-insert options {investor: tx-sender, provider: provider }
-                            {token-x: (contract-of token-x), token-x-amount: token-x-amount, token-y: (contract-of token-y), token-y-amount: token-y-amount,yield: yield-amount, expiry-time: (+ period-blocks block-height)}
+                (map-insert locked-deals {investor: tx-sender, provider: provider, isHedger: is-hedger }
+                            {token-x: (contract-of token-x), token-x-amount: token-x-amount, token-y: (contract-of token-y), yield: yield-amount, expiry-time: period-blocks}
                 )
                 (ok true)
             )
             (err transfer-failed-err)
         )
     )
+    )
+)
+
+(define-public (begin-cycle (investor principal) (provider principal) (isHedger bool) (strike uint) (dToken <dToken-trait>))
+    (begin
+        (let (
+                (deal (unwrap! (map-get? locked-deals {investor: investor, provider: provider, isHedger: isHedger }) (err no-investment-err)))
+            )
+            (let 
+                (
+                    (contract-address (as-contract tx-sender))
+                    (expiry-time (get expiry-time deal))
+                    (token-y-trait (get token-y deal))
+                    (token-x-trait (get token-x deal))
+                    (token-x-amount (get token-x-amount deal))
+                    (yield-amount (get yield deal))
+                    (token-y-amount (/ token-x-amount strike))
+                )
+                (if
+                    (is-ok (print (as-contract (contract-call? dToken issue-d-tokens provider token-y-amount "STX" "BTC" strike)))) 
+                    (begin
+                        (map-insert options {investor: investor, provider: provider }
+                                {token-x: token-x-trait, token-x-amount: token-x-amount, token-y: token-y-trait, token-y-amount: token-y-amount, yield: yield-amount, expiry-time: (+ expiry-time block-height)}
+                        )
+                        (ok token-y-amount)
+                    )
+                    (err u0)
+                )
+            )
+        )
     )
 )
 

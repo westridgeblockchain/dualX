@@ -12,10 +12,10 @@ export class DualXTXClient extends Client {
     )
   }
 
-  async invest(dProvider: string, tokenx: string, tokeny: string, amountx: number, amounty: number, yieldAmount: number, yieldPeriod: number, params: { sender: any }) {
+  async invest(dProvider: string, tokenx: string, tokeny: string, amountx: number, yieldAmount: number, yieldPeriod: number, isHedger: boolean, params: { sender: any }) {
     const tx = this.createTransaction({
       method: { name: "invest", 
-      args: [`'${dProvider}`,`'${tokenx}`,`'${tokeny}`,`u${amountx}`,`u${amounty}`,`u${yieldAmount}`,`u${yieldPeriod}`] }
+      args: [`'${dProvider}`,`'${tokenx}`,`'${tokeny}`,`u${amountx}`,`u${yieldAmount}`,`u${yieldPeriod}`, `${isHedger}`] }
     })
     await tx.sign(params.sender)
     const receipt = await this.submitTransaction(tx)
@@ -25,13 +25,37 @@ export class DualXTXClient extends Client {
       if (result.startsWith('Transaction executed and committed. Returned: ')) {
         const start_of_list = result.substring('Transaction executed and committed. Returned: '.length)  // keep a word so unwrapXYList will behave like it was with 'ok'
         const parsed = parse(start_of_list.substring(0, start_of_list.indexOf(')') + 1))
-        //console.log("parsed -",parsed)
+       // console.log("parsed -",parsed)
         return parsed
       }
     }
     console.log("wrap failure", receipt)
     throw NotOKErr;
   }
+
+  async beginCycle(investor: string, dProvider: string, isHedger: boolean, strike: number, dToken: string, params: { sender: any }) {
+    const tx = this.createTransaction({
+      method: { name: "begin-cycle", 
+      args: [`'${investor}`,`'${dProvider}`, `${isHedger}`,`u${strike}`,`'${dToken}`] }
+    })
+    await tx.sign(params.sender)
+    const receipt = await this.submitTransaction(tx)
+    //console.log(receipt)
+    if (receipt.success) {
+      
+      const result = Result.unwrap(receipt)
+      if (result.startsWith('Transaction executed and committed. Returned: ')) {
+        const start_of_list = result.substring('Transaction executed and committed. Returned: '.length)  // keep a word so unwrapXYList will behave like it was with 'ok'
+       // console.log(start_of_list);
+        const parsed = parse(start_of_list.substring(0, start_of_list.indexOf('\n') + 1))
+       // console.log("parsed -",parsed)
+        return parsed
+      }
+    }
+    console.log("wrap failure", receipt)
+    throw NotOKErr;
+  }
+
   async exerciseOption(investor: string, tokenx: string, tokeny: string, P: number, params: { sender: any }) {
     const tx = this.createTransaction({
       method: { name: "exercise-option", 

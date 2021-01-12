@@ -1,6 +1,6 @@
 ;; The function needed by tokens compatible with SRC20 
-;; a subset of ERC20 methods
-(define-trait src20-token
+;; a subset of ERC20 methods with additional methods for issuing and burning dTokens
+(define-trait dToken-trait
   (
     ;; Transfer from the caller to a new principal
     (transfer (principal uint) (response bool uint))
@@ -17,6 +17,10 @@
     ;; the balance of the passed principal
     (get-balance-of (principal) (response uint uint))
 
+    ;;issue dTokens
+    (issue-d-tokens (principal uint (string-ascii 32) (string-ascii 32) uint) (response uint uint))
+
+    (burn-d-tokens (principal uint) (response bool bool))
   )
 )
 
