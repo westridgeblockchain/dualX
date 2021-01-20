@@ -101,7 +101,7 @@
 
 ;;provider can exercise the option any time prior to the period of maturity
 ;;a ratio of token-x and token-stx for return to investor
-(define-public (exercise-option (investor principal) (token-x <src20-token>) (token-y <src20-token>) (P uint))
+(define-public (exercise-option (investor principal) (token-x <src20-token>) (token-y <src20-token>) (P uint) )
     (begin
         (let (
                 (investment-return (unwrap! (map-get? options {investor: investor, provider: tx-sender}) (err no-investment-err)))
@@ -115,20 +115,20 @@
                     (token-x-trait (get token-x investment-return))
                     (token-x-amount (get token-x-amount investment-return))
                     (yield (get yield investment-return))
-                    (K (/ token-x-amount token-y-amount))
+                    (K (/ token-y-amount token-x-amount));;strike at begin cycle
                     )
                 (if 
-                    (< expiry-time block-height)
+                    (< expiry-time block-height);;>= but for testing <
                     (err period-elapsed-err);;need to think about dTokens ... need to revoke those
                     (if 
                         (and
                                 ;;investor gets (P*X)[STX] + (1-P)*X*K [BTC]
-                                (is-ok (contract-call? token-y transfer investor (* token-y-amount P))) 
+                                (is-ok (contract-call? token-y transfer investor (* token-y-amount P ))) 
                                 ;;investor now gets the portion of BTC (1-P)*X*K [BTC]
-                                ;;(is-ok (contract-call? token-x transfer-from contract-address investor (* (- u1 P) token-y-amount K)))
+                                (is-ok (contract-call? token-x transfer-from contract-address investor  (/ (* (- u100000000 P) token-x-amount) u100000000)))
 
                                 ;;provider can free (P)*X*K [BTC]
-                                (is-ok (contract-call? token-x transfer-from contract-address provider (/ (* P token-y-amount token-x-amount) token-y-amount)))
+                                (is-ok (contract-call? token-x transfer-from contract-address provider (/ (* P token-x-amount) u100000000)))
                 
                                 ;;also the dTokens issued against the original  
                                 ;;(is-ok (contract-call? dToken burn-d-tokens provider token-y-amount))

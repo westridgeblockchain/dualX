@@ -80,17 +80,17 @@ describe("deposit exchange test suite", () => {
 
   describe("Test Scenarios", () => {
     it("initial balance",async()=>{
-      await tokenSTX.wrapStx(150000,{sender:dProvider})
-      assert.equal(await tokenSTX.balanceOf(dProvider),150000)
+      await tokenSTX.wrapStx(150000_000_000_00,{sender:dProvider})
+      assert.equal(await tokenSTX.balanceOf(dProvider),150000_000_000_00)
       assert.equal(await tokenSTX.balanceOf(investor),0)
-      assert.equal(await tokenX.balanceOf(dProvider), 200000000)
-      assert.equal(await tokenX.balanceOf(investor), 2000000000)
+      assert.equal(await tokenX.balanceOf(dProvider), 2_000_000_00)
+      assert.equal(await tokenX.balanceOf(investor), 20_000_000_00)
     })
 
     it("invest in dualX", async () => {
-     await dualX.invest(dProvider,xToken, stxToken,200000000,100000000,1,true,{sender:investor})
-     assert.equal(await tokenX.balanceOf(dProvider), 100000000)
-     assert.equal(await tokenX.balanceOf(investor), 1900000000)
+     await dualX.invest(dProvider,xToken, stxToken,2_000_000_00,1_000_000_00,1,true,{sender:investor})
+     assert.equal(await tokenX.balanceOf(dProvider), 1_000_000_00)
+     assert.equal(await tokenX.balanceOf(investor), 19_000_000_00)
     })
 
     it("begin the investment cycle", async()=>{
@@ -100,18 +100,25 @@ describe("deposit exchange test suite", () => {
     })
 
     // it("exercise option by the provider", async() => {
-    //   await dualX.exerciseOption(investor,xToken,stxToken, 1,{sender:dProvider})
-    //   assert.equal(await tokenX.balanceOf(investor),19)
-    //   assert.equal(await tokenX.balanceOf(dProvider),3)
-    //   assert.equal(await tokenSTX.balanceOf(investor),100000)
+    //   await dualX.exerciseOption(investor,xToken,stxToken, 4_000_000_0,{sender:dProvider})
+    //   assert.equal(await tokenX.balanceOf(investor),20_200_000_00)
+    //   assert.equal(await tokenX.balanceOf(dProvider),1_800_000_00)
+    //   assert.equal(await tokenSTX.balanceOf(investor),56338_000_000_00)
+    //   assert.equal(await tokenSTX.balanceOf(dProvider),93662_000_000_00)
+
+    //   // await dualX.exerciseOption(investor,xToken,stxToken, 1_000_000_00,{sender:dProvider})
+    //   // assert.equal(await tokenX.balanceOf(investor),19_000_000_00)
+    //   // assert.equal(await tokenX.balanceOf(dProvider),3_000_000_00)
+    //   // assert.equal(await tokenSTX.balanceOf(investor),140845_000_000_00)
+    //   // assert.equal(await tokenSTX.balanceOf(dProvider),9155_000_000_00)
     // })
 
-    // it("get return by the investor", async() => {
-    //   await dualX.getReturn(dProvider,xToken,{sender:investor})
-    //   assert.equal(await tokenX.balanceOf(investor),21)
-    //   assert.equal(await tokenX.balanceOf(dProvider),1)
-    //   assert.equal(await tokenSTX.balanceOf(investor),0)
-    // })
+    it("get return by the investor", async() => {
+      await dualX.getReturn(dProvider,xToken,{sender:investor})
+      assert.equal(await tokenX.balanceOf(investor),21_000_000_00)
+      assert.equal(await tokenX.balanceOf(dProvider),1_000_000_00)
+      assert.equal(await tokenSTX.balanceOf(investor),0)
+    })
   });
 
   after(async () => {

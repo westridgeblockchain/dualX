@@ -23,7 +23,7 @@
 )
 ;; the number of decimals used
 (define-read-only (decimals)
-  (ok u0)
+  (ok u8)
 )
 
 ;; Transfers tokens to a specified principal (<trait>)
