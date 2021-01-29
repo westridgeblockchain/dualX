@@ -7,8 +7,10 @@
 (define-constant no-option-err u12)
 (define-constant no-investment-err u13)
 (define-constant transfer-failed-err u14)
+(define-constant not-enough-funds-err u15)
 
 ;;contract owner for admin functions
+(define-constant contract-owner 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7)
 
 ;;private data
 ;; time is in terms of block height for now
@@ -69,7 +71,7 @@
     )
 )
 
-(define-public (begin-cycle (investor principal) (provider principal) (isHedger bool) (strike uint) (dToken <dToken-trait>))
+(define-public (begin-cycle (investor principal) (provider principal) (token-x <src20-token>) (token-y <src20-token>) (isHedger bool) (strike uint) (dToken <dToken-trait>))
     (begin
         (let (
                 (deal (unwrap! (map-get? locked-deals {investor: investor, provider: provider, isHedger: isHedger }) (err no-investment-err)))
@@ -82,15 +84,35 @@
                     (token-x-trait (get token-x deal))
                     (token-x-amount (get token-x-amount deal))
                     (yield-amount (get yield deal))
-                    (token-y-amount (/ token-x-amount strike))
+                    (token-y-amount (* (/ token-x-amount strike) u100000000))
                 )
                 (if
-                    (is-ok (print (as-contract (contract-call? dToken issue-d-tokens provider token-y-amount "STX" "BTC" strike)))) 
+                    (is-ok (print (as-contract (contract-call? dToken issue-d-tokens provider token-y-amount "STX" "BTC" strike (+ expiry-time block-height))))) 
                     (begin
-                        (map-insert options {investor: investor, provider: provider }
+                        (if
+                            (is-eq isHedger true)
+                            (begin
+                                (map-insert options {investor: investor, provider: provider }
                                 {token-x: token-x-trait, token-x-amount: token-x-amount, token-y: token-y-trait, token-y-amount: token-y-amount, yield: yield-amount, expiry-time: (+ expiry-time block-height)}
+                                )
+                                (ok token-y-amount)
+                            )
+                            (if 
+                                (and
+                                    (is-ok (print (as-contract (contract-call? token-x  transfer-from provider contract-address (/ token-x-amount u2)))))
+                                    (is-ok (print (as-contract (contract-call? token-y  transfer-from provider contract-address (/ token-y-amount u2)))))
+                                    (is-ok (print (as-contract (contract-call? 'ST36RB75734NSAPMF8FSZQ0DEWPCPS68PWFK22QN7.GamX invest provider)))) 
+                                )
+                                (begin
+                                    (map-insert options {investor: investor, provider: provider }
+                                    {token-x: token-x-trait, token-x-amount: token-x-amount, token-y: token-y-trait, token-y-amount: token-y-amount, yield: yield-amount, expiry-time: (+ expiry-time block-height)}
+                                    )
+                                    (ok token-y-amount)
+                                )
+                                (err u0)
+                            )
+                            
                         )
-                        (ok token-y-amount)
                     )
                     (err u0)
                 )
@@ -101,7 +123,7 @@
 
 ;;provider can exercise the option any time prior to the period of maturity
 ;;a ratio of token-x and token-stx for return to investor
-(define-public (exercise-option (investor principal) (token-x <src20-token>) (token-y <src20-token>) (P uint) )
+(define-public (exercise-option (investor principal) (token-x <src20-token>) (token-y <src20-token>) (dToken <dToken-trait>) (P uint) )
     (begin
         (let (
                 (investment-return (unwrap! (map-get? options {investor: investor, provider: tx-sender}) (err no-investment-err)))
@@ -131,7 +153,7 @@
                                 (is-ok (contract-call? token-x transfer-from contract-address provider (/ (* P token-x-amount) u100000000)))
                 
                                 ;;also the dTokens issued against the original  
-                                ;;(is-ok (contract-call? dToken burn-d-tokens provider token-y-amount))
+                                (is-ok (contract-call? dToken burn-d-tokens provider token-y-amount))
                         )
                             (ok true) 
                             (err transfer-failed-err)
@@ -146,7 +168,7 @@
 ;;investor can invoke a get-return function to retrieve 
 ;;amount in original currency if the provider has not yet returned as per the
 ;;agreement and the lock period has elapsed
-(define-public (get-return (provider principal) (token-x <src20-token>))
+(define-public (get-return (provider principal) (token-x <src20-token>) (dToken <dToken-trait>))
     (begin
         (let (
                (investment-return (unwrap! (map-get? options {investor: tx-sender, provider: provider}) (err no-investment-err)))
@@ -155,11 +177,13 @@
                         (contract-address (as-contract tx-sender))
                         (period (get expiry-time investment-return))
                         (amount (get token-x-amount investment-return))
+                        (token-y-amount (get token-y-amount investment-return))
                       )
                      (if 
                         (and 
                             (>= period block-height)
                             (is-ok (contract-call? token-x transfer-from contract-address tx-sender amount))
+                            (is-ok (contract-call? dToken burn-d-tokens provider token-y-amount))
                             (map-delete options {investor: tx-sender, provider: provider})
                         )
                         (ok true) 

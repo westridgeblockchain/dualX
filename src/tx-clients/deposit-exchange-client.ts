@@ -33,10 +33,10 @@ export class DualXTXClient extends Client {
     throw NotOKErr;
   }
 
-  async beginCycle(investor: string, dProvider: string, isHedger: boolean, strike: number, dToken: string, params: { sender: any }) {
+  async beginCycle(investor: string, dProvider: string, tokenx: string, tokeny: string, isHedger: boolean, strike: number, dToken: string, params: { sender: any }) {
     const tx = this.createTransaction({
       method: { name: "begin-cycle", 
-      args: [`'${investor}`,`'${dProvider}`, `${isHedger}`,`u${strike}`,`'${dToken}`] }
+      args: [`'${investor}`,`'${dProvider}`, `'${tokenx}`,`'${tokeny}`, `${isHedger}`,`u${strike}`,`'${dToken}`] }
     })
     await tx.sign(params.sender)
     const receipt = await this.submitTransaction(tx)
@@ -56,10 +56,10 @@ export class DualXTXClient extends Client {
     throw NotOKErr;
   }
 
-  async exerciseOption(investor: string, tokenx: string, tokeny: string, P: number, params: { sender: any }) {
+  async exerciseOption(investor: string, tokenx: string, tokeny: string, tokend:string, P: number, params: { sender: any }) {
     const tx = this.createTransaction({
       method: { name: "exercise-option", 
-      args: [`'${investor}`,`'${tokenx}`, `'${tokeny}`, `u${P}`] }
+      args: [`'${investor}`,`'${tokenx}`, `'${tokeny}`,`'${tokend}`, `u${P}`] }
     })
     await tx.sign(params.sender)
     const receipt = await this.submitTransaction(tx)
@@ -76,10 +76,10 @@ export class DualXTXClient extends Client {
     console.log("wrap failure", receipt)
     throw NotOKErr;
   }
-  async getReturn(investor: string, tokenx: string, params: { sender: any }) {
+  async getReturn(investor: string, tokenx: string, tokend:string, params: { sender: any }) {
     const tx = this.createTransaction({
       method: { name: "get-return", 
-      args: [`'${investor}`,`'${tokenx}`] }
+      args: [`'${investor}`,`'${tokenx}`,`'${tokend}`] }
     })
     await tx.sign(params.sender)
     const receipt = await this.submitTransaction(tx)

@@ -6,8 +6,10 @@
 
 ;; Storagae
 (define-map owners {holder: principal}
-                    {profile: (string-ascii 65), strike: uint}
+                    {pair: (string-ascii 65), strike: uint, expiry: uint, amount: uint}
 )
+(define-constant no-token-err u100)
+(define-constant token-expired-err u101)
 
 ;; token name (<trait>)
 (define-read-only (get-name)
@@ -38,25 +40,42 @@
 
 ;;transfer tokens from a sender to a recepient (<trait>)
 (define-public (transfer-from (sender principal) (recipient principal) (amount uint))
-(begin
-  (print "dToken.transfer-from")
-  (print amount)
-  (print sender)
-  (print recipient)
-  (ft-transfer? deposit-token amount sender recipient)
+  (let (
+          (owner (unwrap! (map-get? owners {holder: sender}) (err no-token-err)))
+        )
+        (let (
+              (expiry-time (get expiry owner))
+              )
+              (if (< expiry-time block-height)
+                (begin
+                  (print "dToken.transfer-from")
+                  (print amount)
+                  (print sender)
+                  (print recipient)
+                  ;;if contract clone not possible dynamically then we have to check
+                  ;; if the recepient has some tokens already from the same series and add up
+                  ;; if not then the previous series token will have to be removed first
+                  (ft-transfer? deposit-token amount sender recipient)
+                  ;;needd to update the owner profile also 
+                  ;;map-set ?? WIP
+                )
+                (err token-expired-err)
+              )
+        )
+        
   )
 )
 
 
 ;; Mint deposit tokens
-(define-public (issue-d-tokens (account principal) (amount uint) (xToken (string-ascii 32)) (yToken (string-ascii 32)) (strike uint))
+(define-public (issue-d-tokens (account principal) (amount uint) (xToken (string-ascii 32)) (yToken (string-ascii 32)) (strike uint) (expiry uint))
   (if (and
         (> amount u0)
         (is-ok (ft-mint? deposit-token amount account))
       )
       (begin
         (map-insert owners {holder: account}
-                          {profile: (concat (concat xToken "/") yToken), strike: strike}
+                          {pair: (concat (concat xToken "/") yToken), strike: strike, expiry: expiry, amount: amount}
         )
         (ok amount)
       )
@@ -80,11 +99,11 @@
   )
 )
 
-(define-public (get-profile (account principal))
+(define-public (get-token-pair (account principal))
   (let (
-          (owner (unwrap! (map-get? owners {holder: account}) (err false)))
+          (owner (unwrap! (map-get? owners {holder: account}) (err no-token-err)))
         )
-        (ok (get profile owner))
+        (ok (get pair owner))
   )
 )
 

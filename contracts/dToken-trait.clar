@@ -18,7 +18,7 @@
     (get-balance-of (principal) (response uint uint))
 
     ;;issue dTokens
-    (issue-d-tokens (principal uint (string-ascii 32) (string-ascii 32) uint) (response uint uint))
+    (issue-d-tokens (principal uint (string-ascii 32) (string-ascii 32) uint uint) (response uint uint))
 
     (burn-d-tokens (principal uint) (response bool bool))
   )

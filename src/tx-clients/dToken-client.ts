@@ -23,10 +23,10 @@ export class dTokenClient extends Client{
     return Result.unwrapUInt(receipt)
   }
 
-  async getProfile(owner:string) {
+  async getTokenPair(owner:string) {
     const query = this.createQuery({
       method: {
-        name: 'get-profile',
+        name: 'get-token-pair',
         args: [`'${owner}`],
       },
     })
