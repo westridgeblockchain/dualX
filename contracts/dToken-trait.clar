@@ -1,5 +1,5 @@
 ;; The function needed by tokens compatible with SRC20 
-;; a subset of ERC20 methods with additional methods for issuing and burning dTokens
+;; a superset of ERC20 methods with additional methods for issuing and burning dTokens
 (define-trait dToken-trait
   (
     ;; Transfer from the caller to a new principal
